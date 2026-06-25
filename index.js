@@ -17,8 +17,17 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 app.post('/shorten', (req, res) => {
   const { url } = req.body;
 
-  // TODO: Add input validation for empty URLs
-  // Currently accepts any body without checking if url is present or valid
+  // Input validation for empty URLs
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return res.status(400).json({ error: 'URL is required and must be a non-empty string' });
+  }
+
+  // Validate URL format
+  try {
+    new URL(url);
+  } catch {
+    return res.status(400).json({ error: 'Invalid URL format' });
+  }
 
   const shortId = crypto.randomBytes(4).toString('hex');
   urlStore.set(shortId, url);
@@ -37,10 +46,12 @@ app.post('/shorten', (req, res) => {
 app.get('/:shortId', (req, res) => {
   const { shortId } = req.params;
 
-  // TODO: Handle 404 for missing shortIds
-  // Currently returns undefined redirect if shortId not found
-
+  // Handle 404 for missing shortIds
   const originalUrl = urlStore.get(shortId);
+  if (!originalUrl) {
+    return res.status(404).json({ error: 'Short URL not found' });
+  }
+
   res.redirect(originalUrl);
 });
 
